@@ -1,0 +1,156 @@
+#include <stdio.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define MAX 100
+
+char input[MAX];
+int pos = 0;
+int tempCount = 1;
+
+struct Symbol {
+    char name[20];
+    int value;
+} symTable[50];
+
+int symCount = 0;
+
+char currentToken[20];
+
+void nextToken();
+void expression();
+void term();
+void factor();
+void statement();
+int lookup(char *name);
+void addSymbol(char *name);
+
+void nextToken() {
+    int i = 0;
+
+    while (isspace(input[pos])) pos++;
+
+    if (isalpha(input[pos])) {
+        while (isalnum(input[pos]))
+            currentToken[i++] = input[pos++];
+    }
+    else if (isdigit(input[pos])) {
+        while (isdigit(input[pos]))
+            currentToken[i++] = input[pos++];
+    }
+    else {
+        currentToken[i++] = input[pos++];
+    }
+
+    currentToken[i] = '\0';
+}
+
+int lookup(char *name) {
+    for (int i = 0; i < symCount; i++)
+        if (strcmp(symTable[i].name, name) == 0)
+            return i;
+    return -1;
+}
+
+void addSymbol(char *name) {
+    strcpy(symTable[symCount].name, name);
+    symTable[symCount].value = 0;
+    symCount++;
+}
+
+void factor() {
+    if (isdigit(currentToken[0]) || isalpha(currentToken[0])) {
+        printf("%s", currentToken);
+        nextToken();
+    } else {
+        printf("Syntax Error\n");
+        exit(1);
+    }
+}
+
+void term() {
+    factor();
+
+    while (strcmp(currentToken, "*") == 0 ||
+           strcmp(currentToken, "/") == 0) {
+
+        char op[2];
+        strcpy(op, currentToken);
+        nextToken();
+
+        char left[20], right[20], temp[20];
+
+        strcpy(left, "t");
+        sprintf(left + 1, "%d", tempCount++);
+
+        printf("\n%s = ", left);
+
+        factor();
+    }
+}
+
+void expression() {
+    term();
+
+    while (strcmp(currentToken, "+") == 0 ||
+           strcmp(currentToken, "-") == 0) {
+
+        char op[2];
+        strcpy(op, currentToken);
+        nextToken();
+
+        char temp[20];
+        sprintf(temp, "t%d", tempCount++);
+
+        printf("\n%s = ", temp);
+
+        term();
+    }
+}
+
+void statement() {
+    char var[20];
+
+    if (isalpha(currentToken[0])) {
+        strcpy(var, currentToken);
+
+        if (lookup(var) == -1)
+            addSymbol(var);
+
+        nextToken();
+
+        if (strcmp(currentToken, "=") != 0) {
+            printf("Expected '='\n");
+            exit(1);
+        }
+
+        nextToken();
+
+        expression();
+
+        printf("\n%s = t%d\n", var, tempCount - 1);
+
+        if (strcmp(currentToken, ";") != 0) {
+            printf("Missing ';'\n");
+            exit(1);
+        }
+
+        nextToken();
+    }
+}
+
+int main() {
+
+    printf("Enter code line:\n");
+    fgets(input, MAX, stdin);
+
+    nextToken();
+
+    while (currentToken[0] != '\0')
+        statement();
+
+    printf("\n--- Compilation Finished ---\n");
+
+    return 0;
+}
