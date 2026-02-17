@@ -1,0 +1,114 @@
+#define STACK_SIZE 100
+#define PROGRAM_SIZE 100
+
+int stack[STACK_SIZE];
+int sp;
+
+int program[PROGRAM_SIZE];
+int pc;
+
+#define PUSH 1
+#define ADD  2
+#define SUB  3
+#define MUL  4
+#define DIV  5
+#define PRINT 6
+#define HALT  7
+
+void push(int value) {
+    stack[sp] = value;
+    sp = sp + 1;
+}
+
+int pop() {
+    sp = sp - 1;
+    return stack[sp];
+}
+
+void execute() {
+    int running;
+    running = 1;
+
+    while (running) {
+
+        int opcode;
+        opcode = program[pc];
+        pc = pc + 1;
+
+        if (opcode == PUSH) {
+            int value;
+            value = program[pc];
+            pc = pc + 1;
+            push(value);
+        }
+
+        else if (opcode == ADD) {
+            int b;
+            int a;
+            b = pop();
+            a = pop();
+            push(a + b);
+        }
+
+        else if (opcode == SUB) {
+            int b;
+            int a;
+            b = pop();
+            a = pop();
+            push(a - b);
+        }
+
+        else if (opcode == MUL) {
+            int b;
+            int a;
+            b = pop();
+            a = pop();
+            push(a * b);
+        }
+
+        else if (opcode == DIV) {
+            int b;
+            int a;
+            b = pop();
+            a = pop();
+            push(a / b);
+        }
+
+        else if (opcode == PRINT) {
+            int value;
+            value = pop();
+            print(value);
+        }
+
+        else if (opcode == HALT) {
+            running = 0;
+        }
+    }
+}
+
+int main() {
+
+    sp = 0;
+    pc = 0;
+
+    program[0] = PUSH;
+    program[1] = 10;
+
+    program[2] = PUSH;
+    program[3] = 20;
+
+    program[4] = ADD;
+
+    program[5] = PUSH;
+    program[6] = 5;
+
+    program[7] = MUL;
+
+    program[8] = PRINT;
+
+    program[9] = HALT;
+
+    execute();
+
+    return 0;
+}
