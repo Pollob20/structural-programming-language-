@@ -1,0 +1,136 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define STACK_SIZE 100
+#define PROGRAM_SIZE 200
+
+// Opcodes
+#define PUSH 1
+#define ADD  2
+#define SUB  3
+#define MUL  4
+#define DIV  5
+#define PRINT 6
+#define JMP 7
+#define JZ  8
+#define HALT 9
+
+int stack[STACK_SIZE];
+int sp = -1;
+
+int program[PROGRAM_SIZE];
+int pc = 0;
+
+void push(int value) {
+    if (sp >= STACK_SIZE - 1) {
+        printf("Stack Overflow\n");
+        exit(1);
+    }
+    stack[++sp] = value;
+}
+
+int pop() {
+    if (sp < 0) {
+        printf("Stack Underflow\n");
+        exit(1);
+    }
+    return stack[sp--];
+}
+
+void execute() {
+    int running = 1;
+
+    while (running) {
+        int opcode = program[pc++];
+
+        switch (opcode) {
+
+            case PUSH:
+                push(program[pc++]);
+                break;
+
+            case ADD: {
+                int b = pop();
+                int a = pop();
+                push(a + b);
+                break;
+            }
+
+            case SUB: {
+                int b = pop();
+                int a = pop();
+                push(a - b);
+                break;
+            }
+
+            case MUL: {
+                int b = pop();
+                int a = pop();
+                push(a * b);
+                break;
+            }
+
+            case DIV: {
+                int b = pop();
+                int a = pop();
+                push(a / b);
+                break;
+            }
+
+            case PRINT:
+                printf("Output: %d\n", pop());
+                break;
+
+            case JMP:
+                pc = program[pc];
+                break;
+
+            case JZ: {
+                int condition = pop();
+                int address = program[pc++];
+                if (condition == 0)
+                    pc = address;
+                break;
+            }
+
+            case HALT:
+                running = 0;
+                break;
+
+            default:
+                printf("Unknown Instruction\n");
+                exit(1);
+        }
+    }
+}
+
+int main() {
+
+    // Example program:
+    // Compute factorial of 5
+
+    int i = 0;
+
+    program[i++] = PUSH; program[i++] = 5;    // n
+    program[i++] = PUSH; program[i++] = 1;    // result
+
+    int loopStart = i;
+
+    program[i++] = PUSH; program[i++] = 1;
+    program[i++] = SUB;
+    program[i++] = JZ; program[i++] = 18;
+
+    program[i++] = PUSH; program[i++] = 1;
+    program[i++] = ADD;
+
+    program[i++] = MUL;
+
+    program[i++] = JMP; program[i++] = loopStart;
+
+    program[i++] = PRINT;
+    program[i++] = HALT;
+
+    execute();
+
+    return 0;
+}
