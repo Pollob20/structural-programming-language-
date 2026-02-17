@@ -1,0 +1,113 @@
+#define MAX_PROC 5
+#define TIME_QUANTUM 3
+#define MEM_SIZE 64
+#define PAGE_SIZE 8
+
+struct PCB {
+    int pid;
+    int pc;
+    int registers[4];
+    int state;      // 0=ready,1=running,2=terminated
+    int pages[4];   // simple page table
+};
+
+struct PCB processes[MAX_PROC];
+
+int memory[MEM_SIZE];
+int current;
+int total_proc;
+
+void init_process(int id) {
+    processes[id].pid = id;
+    processes[id].pc = 0;
+    processes[id].state = 0;
+
+    int i;
+    for (i = 0; i < 4; i = i + 1) {
+        processes[id].registers[i] = 0;
+        processes[id].pages[i] = (id * 4 + i);
+    }
+}
+
+int translate(int pid, int virtual_addr) {
+    int page;
+    int offset;
+    page = virtual_addr / PAGE_SIZE;
+    offset = virtual_addr % PAGE_SIZE;
+
+    if (page >= 4) {
+        print(-1);  // page fault
+        return -1;
+    }
+
+    int frame;
+    frame = processes[pid].pages[page];
+
+    return frame * PAGE_SIZE + offset;
+}
+
+void execute_instruction(int pid) {
+
+    int physical;
+    physical = translate(pid, processes[pid].pc);
+
+    if (physical == -1) {
+        processes[pid].state = 2;
+        return;
+    }
+
+    memory[physical] = memory[physical] + 1;
+
+    processes[pid].pc = processes[pid].pc + 1;
+
+    if (processes[pid].pc > 15) {
+        processes[pid].state = 2;
+    }
+}
+
+void scheduler() {
+
+    int finished;
+    finished = 0;
+
+    while (finished < total_proc) {
+
+        int i;
+        for (i = 0; i < total_proc; i = i + 1) {
+
+            if (processes[i].state != 2) {
+
+                processes[i].state = 1;
+
+                int t;
+                for (t = 0; t < TIME_QUANTUM; t = t + 1) {
+                    execute_instruction(i);
+                    if (processes[i].state == 2)
+                        break;
+                }
+
+                if (processes[i].state == 2) {
+                    finished = finished + 1;
+                } else {
+                    processes[i].state = 0;
+                }
+            }
+        }
+    }
+}
+
+int main() {
+
+    total_proc = 3;
+
+    int i;
+    for (i = 0; i < total_proc; i = i + 1) {
+        init_process(i);
+    }
+
+    scheduler();
+
+    print(memory[0]);
+
+    return 0;
+}
