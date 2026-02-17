@@ -1,0 +1,90 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+#define FRAME_COUNT 4
+#define PAGE_COUNT 10
+#define PAGE_SIZE 4
+
+int frames[FRAME_COUNT];
+int pageTable[PAGE_COUNT];
+int fifoIndex = 0;
+int pageFaults = 0;
+
+void initialize();
+void displayMemory();
+int searchFrame(int page);
+void loadPage(int page);
+void accessAddress(int logicalAddress);
+
+int main() {
+    int logicalAddress;
+
+    initialize();
+
+    printf("==== MINI VIRTUAL MEMORY SIMULATOR ====\n");
+
+    while (1) {
+        printf("\nEnter logical address (0 - %d) or -1 to exit: ",
+               PAGE_COUNT * PAGE_SIZE - 1);
+        scanf("%d", &logicalAddress);
+
+        if (logicalAddress == -1)
+            break;
+
+        accessAddress(logicalAddress);
+    }
+
+    printf("\nTotal Page Faults: %d\n", pageFaults);
+    return 0;
+}
+
+void initialize() {
+    for (int i = 0; i < FRAME_COUNT; i++)
+        frames[i] = -1;
+
+    for (int i = 0; i < PAGE_COUNT; i++)
+        pageTable[i] = -1;
+}
+
+int searchFrame(int page) {
+    for (int i = 0; i < FRAME_COUNT; i++) {
+        if (frames[i] == page)
+            return i;
+    }
+    return -1;
+}
+
+void loadPage(int page) {
+    if (frames[fifoIndex] != -1)
+        pageTable[frames[fifoIndex]] = -1;
+
+    frames[fifoIndex] = page;
+    pageTable[page] = fifoIndex;
+
+    fifoIndex = (fifoIndex + 1) % FRAME_COUNT;
+    pageFaults++;
+}
+
+void accessAddress(int logicalAddress) {
+    if (logicalAddress < 0 || logicalAddress >= PAGE_COUNT * PAGE_SIZE) {
+        printf("Invalid address.\n");
+        return;
+    }
+
+    int page = logicalAddress / PAGE_SIZE;
+    int offset = logicalAddress % PAGE_SIZE;
+
+    int frame = searchFrame(page);
+
+    if (frame == -1) {
+        printf("Page Fault! Loading page %d...\n", page);
+        loadPage(page);
+        frame = pageTable[page];
+    }
+
+    int physicalAddress = frame * PAGE_SIZE + offset;
+
+    printf("Logical Address: %d\n", logicalAddress);
+    printf("Page: %d | Offset: %d\n", page, offset);
+    printf("Frame: %d\n", frame);
+    printf("Physical Address: %d\n", physical
